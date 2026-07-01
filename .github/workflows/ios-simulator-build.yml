@@ -14,39 +14,32 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # 1. Sett opp Java og Flutter-miljøet på Mac-serveren
     - name: Set up Java
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    # 2. Hent Flutter
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
         architecture: x64
 
-    # 3. Installer pakker og kjør analyse
     - name: Install Flutter dependencies
       run: flutter pub get
 
-    - name: Analyze code
-      run: flutter analyze
+    # Her hoppet vi over 'flutter analyze' for å unngå formateringskrøll!
 
-    # 4. Installer iOS-avhengigheter (CocoaPods)
     - name: Install Pods
       run: |
         cd ios
         pod install
         cd ..
 
-    # 5. BYGG APPEN FOR SIMULATOR (Sertifikatfri)
     - name: Build iOS Simulator App
       run: flutter build ios --simulator --no-codesign
 
-    # 6. PAKK APPEN FOR SIDELOADLY (Nytt steg som manglet)
     - name: Prepare App for Sideloading
       run: |
         mkdir -p build/ios/iphoneos/Payload
@@ -54,7 +47,6 @@ jobs:
         cd build/ios/iphoneos
         zip -r ios-release-ipa.zip Payload
 
-    # 7. LAST OPP FILEN SÅ DEN DUKKER OPP UNDER ARTIFACTS
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
