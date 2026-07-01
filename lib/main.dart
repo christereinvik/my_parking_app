@@ -13,15 +13,20 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  const AndroidInitializationSettings androidInit =
-      AndroidInitializationSettings('@mipmap/ic_launcher');
-  final DarwinInitializationSettings iosInit = DarwinInitializationSettings();
+
+  final AndroidInitializationSettings androidInit =
+      const AndroidInitializationSettings('@mipmap/ic_launcher');
+  final DarwinInitializationSettings iosInit = const DarwinInitializationSettings();
+
   await flutterLocalNotificationsPlugin.initialize(
-    const InitializationSettings(android: androidInit, iOS: iosInit),
+    InitializationSettings(android: androidInit, iOS: iosInit),
   );
+
+  // Request iOS permissions
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
       ?.requestPermissions(alert: true, badge: true, sound: true);
+
   runApp(const MyApp());
 }
 
@@ -53,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _sendLocalNotification(String title, String body) async {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+    final androidDetails = AndroidNotificationDetails(
       'parkering_channel',
       'Parkering-varsler',
       importance: Importance.max,
@@ -62,17 +67,22 @@ class _HomeScreenState extends State<HomeScreen> {
       enableVibration: true,
       vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
     );
-    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails(
+
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
       sound: 'default',
     );
+
+    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    // Use named parameters (newer plugin versions expect named args)
     await flutterLocalNotificationsPlugin.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title,
-      body,
-      const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: title,
+      body: body,
+      notificationDetails: details,
     );
   }
 
@@ -83,24 +93,28 @@ class _HomeScreenState extends State<HomeScreen> {
       if (perm == geo.LocationPermission.denied) return;
     }
     if (!await geo.Geolocator.isLocationServiceEnabled()) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Slå på posisjonstjenester først')));
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Slå på posisjonstjenester først')));
+      }
       return;
     }
+
     final service = GeofenceService.instance.setup(
       interval: 10000,
       accuracy: 100,
       allowMockLocations: false,
       useActivityRecognition: false,
     );
+
     service.addGeofence(jobbGeofence);
-    service.addGeofenceStatusChangeListener(
-        (geofence, radius, status, location) async {
+
+    service.addGeofenceStatusChangeListener((geofence, radius, status, location) async {
       if (status == GeofenceStatus.ENTER) {
-        await _sendLocalNotification(
-            'Du er ved jobb', 'Husk å starte parkering og betaling');
+        await _sendLocalNotification('Du er ved jobb', 'Husk å starte parkering og betaling');
       }
     });
+
     await GeofenceService.instance.start();
     setState(() => monitoring = true);
   }
@@ -120,10 +134,18 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 12),
           ElevatedButton(
             onPressed: monitoring ? _stopMonitoring : _startMonitoring,
-            child:
-                Text(monitoring ? 'Stopp overvåkning' : 'Start overvåkning'),
+            child: Text(monitoring ? 'Stopp overvåkning' : 'Start overvåkning'),
           ),
         ]),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await _sendLocalNotification('Testvarsel', 'Dette er et testvarsel');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Testvarsel sendt')));
+          }
+        },
+        child: const Icon(Icons.notification_add),
       ),
     );
   }
