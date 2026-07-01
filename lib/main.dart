@@ -89,8 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Vi legger til denne linjen for å tvinge linteren til å godta koden
-  @useResult
   Future<void> _startMonitoring() async {
     var perm = await geo.Geolocator.checkPermission();
     if (perm == geo.LocationPermission.denied) {
@@ -114,7 +112,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     service.addGeofence(jobbGeofence);
 
-    // ignore: use_build_context_synchronously
     service.addGeofenceStatusChangeListener((geofence, radius, status, location) async {
       if (status == GeofenceStatus.ENTER) {
         await _sendLocalNotification('Du er ved jobb', 'Husk å starte parkering og betaling');
