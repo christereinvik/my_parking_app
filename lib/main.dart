@@ -18,17 +18,19 @@ void main() async {
   const AndroidInitializationSettings androidInit =
       AndroidInitializationSettings('@mipmap/ic_launcher');
       
-  // Konfigurasjon for iOS (Darwin) - Krever ingen ekstra argumenter som standard
+  // Konfigurasjon for iOS (Darwin)
   const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
 
-  // Samle innstillingene i et InitializationSettings-objekt
+  // Samle innstillingene
   const InitializationSettings initializationSettings = InitializationSettings(
     android: androidInit,
     iOS: iosInit,
   );
 
-  // Initialiser pluginen ved å sende inn innstillingsobjektet direkte (uten navn)
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  // RIKTIG FOR VERSJON 22+: Bruk det navngitte parameteret 'settings'
+  await flutterLocalNotificationsPlugin.initialize(
+    settings: initializationSettings,
+  );
 
   // Be om iOS-tillatelser for varslinger
   await flutterLocalNotificationsPlugin
