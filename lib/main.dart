@@ -19,8 +19,8 @@ void main() async {
   final DarwinInitializationSettings iosInit = const DarwinInitializationSettings();
 
   await flutterLocalNotificationsPlugin.initialize(
-    InitializationSettings(android: androidInit, iOS: iosInit),
-  );
+  initializationSettings: InitializationSettings(android: androidInit, iOS: iosInit),
+);
 
   // Request iOS permissions
   await flutterLocalNotificationsPlugin
