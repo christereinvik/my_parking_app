@@ -1,30 +1,63 @@
-name: iOS Simulator Build
+name: build-ios-simulator
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
+    branches: [ main ]
 
 jobs:
   build-ios-simulator:
     runs-on: macos-14
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Setup Flutter
-        uses: flutter-actions/setup-flutter@v2
-        with:
-          flutter-version: 3.13.10
+    # 1. Sett opp Java og Flutter-miljøet på Mac-serveren
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
 
-      - name: Install dependencies
-        run: flutter pub get
+    # 2. Hent Flutter
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+        architecture: x64
 
-      - name: Install CocoaPods dependencies
-        working-directory: ios
-        run: pod install
+    # 3. Installer pakker og kjør analyse
+    - name: Install Flutter dependencies
+      run: flutter pub get
 
-      - name: Build iOS app for simulator
-        run: flutter build ios --simulator --no-codesign
+    - name: Analyze code
+      run: flutter analyze
+
+    # 4. Installer iOS-avhengigheter (CocoaPods)
+    - name: Install Pods
+      run: |
+        cd ios
+        pod install
+        cd ..
+
+    # 5. BYGG APPEN FOR SIMULATOR (Sertifikatfri)
+    - name: Build iOS Simulator App
+      run: flutter build ios --simulator --no-codesign
+
+    # 6. PAKK APPEN FOR SIDELOADLY (Nytt steg som manglet)
+    - name: Prepare App for Sideloading
+      run: |
+        mkdir -p build/ios/iphoneos/Payload
+        cp -r build/ios/iphonesimulator/Runner.app build/ios/iphoneos/Payload/
+        cd build/ios/iphoneos
+        zip -r ios-release-ipa.zip Payload
+
+    # 7. LAST OPP FILEN SÅ DEN DUKKER OPP UNDER ARTIFACTS
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-release-ipa
+        path: build/ios/iphoneos/ios-release-ipa.zip
+        retention-days: 5
