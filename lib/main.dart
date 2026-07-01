@@ -14,21 +14,30 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  final AndroidInitializationSettings androidInit =
-      const AndroidInitializationSettings('@mipmap/ic_launcher');
-  final DarwinInitializationSettings iosInit = const DarwinInitializationSettings();
+  // Konfigurasjon for Android
+  const AndroidInitializationSettings androidInit =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+      
+  // Konfigurasjon for iOS (Darwin) - Krever ingen ekstra argumenter som standard
+  const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
 
-  await flutterLocalNotificationsPlugin.initialize(
-  initializationSettings: InitializationSettings(android: androidInit, iOS: iosInit),
-);
+  // Samle innstillingene i et InitializationSettings-objekt
+  const InitializationSettings initializationSettings = InitializationSettings(
+    android: androidInit,
+    iOS: iosInit,
+  );
 
-  // Request iOS permissions
+  // Initialiser pluginen ved å sende inn innstillingsobjektet direkte (uten navn)
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  // Be om iOS-tillatelser for varslinger
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
       ?.requestPermissions(alert: true, badge: true, sound: true);
 
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
