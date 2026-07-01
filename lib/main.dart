@@ -14,32 +14,25 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Konfigurasjon for Android
   const AndroidInitializationSettings androidInit =
       AndroidInitializationSettings('@mipmap/ic_launcher');
-      
-  // Konfigurasjon for iOS (Darwin)
   const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
 
-  // Samle innstillingene
   const InitializationSettings initializationSettings = InitializationSettings(
     android: androidInit,
     iOS: iosInit,
   );
 
-  // RIKTIG FOR VERSJON 22+: Bruk det navngitte parameteret 'settings'
   await flutterLocalNotificationsPlugin.initialize(
     settings: initializationSettings,
   );
 
-  // Be om iOS-tillatelser for varslinger
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
       ?.requestPermissions(alert: true, badge: true, sound: true);
 
   runApp(const MyApp());
 }
-
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -79,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
       vibrationPattern: Int64List.fromList([0, 500, 200, 500]),
     );
 
-    final iosDetails = DarwinNotificationDetails(
+    const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
@@ -88,7 +81,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
-    // Use named parameters (newer plugin versions expect named args)
     await flutterLocalNotificationsPlugin.show(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: title,
@@ -103,32 +95,9 @@ class _HomeScreenState extends State<HomeScreen> {
       perm = await geo.Geolocator.requestPermission();
       if (perm == geo.LocationPermission.denied) return;
     }
-    if (!await geo.Geolocator.isLocationServiceEnabled()) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Slå på posisjonstjenester først')));
-      }
-      return;
-    }
-
-    final service = GeofenceService.instance.setup(
-      interval: 10000,
-      accuracy: 100,
-      allowMockLocations: false,
-      useActivityRecognition: false,
-    );
-
-    service.addGeofence(jobbGeofence);
-
-      Future<void> _startMonitoring() async {
-    var perm = await geo.Geolocator.checkPermission();
-    if (perm == geo.LocationPermission.denied) {
-      perm = await geo.Geolocator.requestPermission();
-      if (perm == geo.LocationPermission.denied) return;
-    }
     
     if (!await geo.Geolocator.isLocationServiceEnabled()) {
-      if (!mounted) return; // Sikrer 'context' før SnackBar
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Slå på posisjonstjenester først')));
       return;
@@ -150,9 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     await GeofenceService.instance.start();
-    
-    if (!mounted) return; // Nøkkelen for å fikse feilen på linje 27!
+    if (!mounted) return;
     setState(() => monitoring = true);
+  }
+
+  Future<void> _stopMonitoring() async {
+    await GeofenceService.instance.stop();
+    if (!mounted) return;
+    setState(() => monitoring = false);
   }
 
   @override
@@ -172,9 +146,8 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await _sendLocalNotification('Testvarsel', 'Dette er et testvarsel');
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Testvarsel sendt')));
-          }
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Testvarsel sendt')));
         },
         child: const Icon(Icons.notification_add),
       ),
