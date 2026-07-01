@@ -120,6 +120,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
     service.addGeofence(jobbGeofence);
 
+      Future<void> _startMonitoring() async {
+    var perm = await geo.Geolocator.checkPermission();
+    if (perm == geo.LocationPermission.denied) {
+      perm = await geo.Geolocator.requestPermission();
+      if (perm == geo.LocationPermission.denied) return;
+    }
+    
+    if (!await geo.Geolocator.isLocationServiceEnabled()) {
+      if (!mounted) return; // Sikrer 'context' før SnackBar
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Slå på posisjonstjenester først')));
+      return;
+    }
+
+    final service = GeofenceService.instance.setup(
+      interval: 10000,
+      accuracy: 100,
+      allowMockLocations: false,
+      useActivityRecognition: false,
+    );
+
+    service.addGeofence(jobbGeofence);
+
     service.addGeofenceStatusChangeListener((geofence, radius, status, location) async {
       if (status == GeofenceStatus.ENTER) {
         await _sendLocalNotification('Du er ved jobb', 'Husk å starte parkering og betaling');
@@ -127,12 +150,9 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     await GeofenceService.instance.start();
+    
+    if (!mounted) return; // Nøkkelen for å fikse feilen på linje 27!
     setState(() => monitoring = true);
-  }
-
-  Future<void> _stopMonitoring() async {
-    await GeofenceService.instance.stop();
-    setState(() => monitoring = false);
   }
 
   @override
