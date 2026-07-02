@@ -39,9 +39,9 @@ jobs:
 
     - name: Build Unsigned iOS App for ARM64 Device
       run: |
-        flutter build ios --simulator --no-codesign --dart-define=tint=arm64
+        flutter build ios --simulator --no-codesign --pub-bindings --dart-define=flavors=prod
 
-    # Pakk app-mappen inn i den korrekte Payload-strukturen for Sideloadly
+    # Pakk om til Payload med riktig struktur for Sideloadly
     - name: Prepare App for Sideloading
       run: |
         mkdir -p build/ios/iphoneos/Payload
@@ -55,4 +55,5 @@ jobs:
         name: Runner-IPA
         path: build/ios/iphoneos/Runner.ipa
         retention-days: 5
+
 
