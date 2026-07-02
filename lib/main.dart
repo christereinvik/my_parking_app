@@ -62,24 +62,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _sendLocalNotification(String title, String body) async {
-    final androidDetails = AndroidNotificationDetails(
+    // Vi forenkler Android-detaljene for å unngå potensielle konflikter
+    const androidDetails = AndroidNotificationDetails(
       'parkering_channel',
       'Parkering-varsler',
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
-      vibrationPattern: Int64List.fromList([]),
     );
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: true,
-      sound: 'default',
+      presentSound: true, // Sørger for at iOS vet den skal spille lyd
+      sound: 'default',   // Bruker standard iOS-varslingslyd
     );
 
-    final details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await flutterLocalNotificationsPlugin.show(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
