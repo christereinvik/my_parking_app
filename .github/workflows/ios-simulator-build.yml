@@ -37,19 +37,20 @@ jobs:
         pod install
         cd ..
 
-    - name: Build iOS Simulator App
-      run: flutter build ios --simulator --no-codesign
+    - name: Build iOS Framework/App for Device
+      run: flutter build ios --no-codesign --release
 
+    # Pakk ekte enhets-build i stedet for simulator-build
     - name: Prepare App for Sideloading
       run: |
         mkdir -p build/ios/iphoneos/Payload
-        cp -r build/ios/iphonesimulator/Runner.app build/ios/iphoneos/Payload/
+        cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/
         cd build/ios/iphoneos
-        zip -r ios-release-ipa.zip Payload
+        zip -r Runner.ipa Payload
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ios-release-ipa
-        path: build/ios/iphoneos/ios-release-ipa.zip
+        name: Runner-IPA
+        path: build/ios/iphoneos/Runner.ipa
         retention-days: 5
