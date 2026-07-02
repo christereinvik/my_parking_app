@@ -54,11 +54,6 @@
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Appen krever alltid tilgang til posisjon for å varsle deg i bakgrunnen når du ankommer jobb.</string>
 	
-	<!-- 🔄 Bakgrunnsaktivitet for posisjon og varsler -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
 
 	<!-- 🌐 Tillatelse for url_launcher (åpne nettsider/kart) -->
 	<key>LSApplicationQueriesSchemes</key>

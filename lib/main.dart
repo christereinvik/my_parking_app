@@ -89,8 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _startMonitoring() async {
-    if (jobbGeofence == null) return;
-
     var perm = await geo.Geolocator.checkPermission();
     if (perm == geo.LocationPermission.denied) {
       perm = await geo.Geolocator.requestPermission();
@@ -104,29 +102,31 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    // Vi henter instansen trygt ETTER at brukeren trykker på knappen
-    final service = GeofenceService.instance.setup(
-      interval: 10000,
-      accuracy: 100,
-      allowMockLocations: false,
-      useActivityRecognition: false,
-    );
+    setState(() => monitoring = true);
 
-    service.addGeofence(jobbGeofence!);
+    geo.Geolocator.getPositionStream(
+      locationSettings: const geo.LocationSettings(
+        accuracy: geo.LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((geo.Position position) async {
+      if (!monitoring) return;
+      
+      double distanceInMeters = geo.Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        jobbLatitude,
+        jobbLongitude,
+      );
 
-    service.addGeofenceStatusChangeListener((geofence, radius, status, location) async {
-      if (status == GeofenceStatus.ENTER) {
+      if (distanceInMeters <= jobbRadiusMeters) {
         await _sendLocalNotification('Du er ved jobb', 'Husk å starte parkering og betaling');
+        _stopMonitoring();
       }
     });
-
-    await GeofenceService.instance.start();
-    if (!mounted) return;
-    setState(() => monitoring = true);
   }
 
   Future<void> _stopMonitoring() async {
-    await GeofenceService.instance.stop();
     if (!mounted) return;
     setState(() => monitoring = false);
   }
