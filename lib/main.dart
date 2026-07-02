@@ -5,7 +5,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:audioplayers/audioplayers.dart';
 
-
 const double jobbLatitude = 69.684218;
 const double jobbLongitude = 18.973769;
 const double jobbRadiusMeters = 300.0;
@@ -50,12 +49,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool monitoring = false;
-  Geofence? jobbGeofence; // Endret til nullable for å unngå tidlig minne-konflikt
+  Geofence? jobbGeofence;
 
   @override
   void initState() {
     super.initState();
-    // Vi initialiserer geofencen trygt i minnet
     jobbGeofence = Geofence(
       id: 'jobb_zone',
       latitude: jobbLatitude,
@@ -64,7 +62,62 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-    Future<void> _startMonitoring() async {
+  // 🔥 HER ER FUNKSJONEN SOM MANGLER: Spiller av lokal alarm og åpner dialogboksen!
+  Future<void> _sendLocalNotification(String title, String body) async {
+    const androidDetails = AndroidNotificationDetails(
+      'parkering_channel',
+      'Parkering-varsler',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+      sound: 'default',
+    );
+
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        // Henter den lokale mp3-filen direkte fra appens assets-minne
+        AudioPlayer().play(AssetSource('alarm.mp3'));
+        
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.notifications_active, color: Colors.red),
+              const SizedBox(width: 10),
+              Text(title),
+            ],
+          ),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK, forstått'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Den riktige overvåkningslogikken med live avstandssjekk
+  Future<void> _startMonitoring() async {
     var perm = await geo.Geolocator.checkPermission();
     if (perm == geo.LocationPermission.denied) {
       perm = await geo.Geolocator.requestPermission();
@@ -80,16 +133,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => monitoring = true);
 
-    // Starter live-mottaket av GPS-koordinater på din iPhone 13
     geo.Geolocator.getPositionStream(
       locationSettings: const geo.LocationSettings(
         accuracy: geo.LocationAccuracy.high,
-        distanceFilter: 10, // Sjekker kun hvis du flytter deg 10 meter
+        distanceFilter: 10,
       ),
     ).listen((geo.Position position) async {
       if (!monitoring) return;
       
-      // Regner ut nøyaktig avstand i meter til jobb-koordinatene i Tromsø
       double distanceInMeters = geo.Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
@@ -97,9 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
         jobbLongitude,
       );
 
-      // 🔥 KUN SPILL ALARM HVIS DU FAKTISK ER INNENFOR 300 METER FRA JOBB!
       if (distanceInMeters <= jobbRadiusMeters) {
-        _stopMonitoring(); // Slår av overvåkningen med en gang så den ikke looper uavbrutt
+        _stopMonitoring(); 
         
         await _sendLocalNotification(
           'Du er ved jobb', 
