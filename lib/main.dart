@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _sendLocalNotification(String title, String body) async {
+    Future<void> _sendLocalNotification(String title, String body) async {
     const androidDetails = AndroidNotificationDetails(
       'parkering_channel',
       'Parkering-varsler',
@@ -86,7 +86,35 @@ class _HomeScreenState extends State<HomeScreen> {
       body: body,
       notificationDetails: details,
     );
+
+    // 🔥 Denne dialogboksen tvinger frem det visuelle og overstyrer iOS-sperren i forgrunnen
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        Feedback.forTap(context); // Spiller en standard klikk-/systemlyd via appen
+        
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.notifications_active, color: Colors.red),
+              const SizedBox(width: 10),
+              Text(title),
+            ],
+          ),
+          content: Text(body),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK, forstått'),
+            ),
+          ],
+        );
+      },
+    );
   }
+
 
   Future<void> _startMonitoring() async {
     var perm = await geo.Geolocator.checkPermission();
