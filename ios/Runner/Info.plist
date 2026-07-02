@@ -58,7 +58,6 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
-		<string>remote-notification</string>
 	</array>
 
 	<!-- 🌐 Tillatelse for url_launcher (åpne nettsider/kart) -->
