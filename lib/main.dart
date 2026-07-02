@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:geofence_service/geofence_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:geolocator/geolocator.dart' as geo;
+import 'package:audioplayers/audioplayers.dart';
+
 
 const double jobbLatitude = 69.684218;
 const double jobbLongitude = 18.973769;
@@ -93,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        Feedback.forTap(context); // Spiller en standard klikk-/systemlyd via appen
+        AudioPlayer().play(UrlSource('http://google.com'));
         
         return AlertDialog(
           title: Row(
