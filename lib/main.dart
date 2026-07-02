@@ -31,7 +31,6 @@ void main() async {
       .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
       ?.requestPermissions(alert: true, badge: true, sound: true);
 
-
   runApp(const MyApp());
 }
 
@@ -49,11 +48,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool monitoring = false;
-  late final Geofence jobbGeofence;
+  Geofence? jobbGeofence; // Endret til nullable for å unngå tidlig minne-konflikt
 
   @override
   void initState() {
     super.initState();
+    // Vi initialiserer geofencen trygt i minnet
     jobbGeofence = Geofence(
       id: 'jobb_zone',
       latitude: jobbLatitude,
@@ -63,21 +63,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _sendLocalNotification(String title, String body) async {
-    // Vi forenkler Android-detaljene for å unngå potensielle konflikter
     const androidDetails = AndroidNotificationDetails(
       'parkering_channel',
       'Parkering-varsler',
       importance: Importance.max,
       priority: Priority.high,
       playSound: true,
-      enableVibration: true,
     );
 
     const iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
-      presentSound: true, // Sørger for at iOS vet den skal spille lyd
-      sound: 'default',   // Bruker standard iOS-varslingslyd
+      presentSound: true,
+      sound: 'default',
     );
 
     const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
@@ -91,6 +89,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _startMonitoring() async {
+    if (jobbGeofence == null) return;
+
     var perm = await geo.Geolocator.checkPermission();
     if (perm == geo.LocationPermission.denied) {
       perm = await geo.Geolocator.requestPermission();
@@ -104,6 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    // Vi henter instansen trygt ETTER at brukeren trykker på knappen
     final service = GeofenceService.instance.setup(
       interval: 10000,
       accuracy: 100,
@@ -111,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
       useActivityRecognition: false,
     );
 
-    service.addGeofence(jobbGeofence);
+    service.addGeofence(jobbGeofence!);
 
     service.addGeofenceStatusChangeListener((geofence, radius, status, location) async {
       if (status == GeofenceStatus.ENTER) {
