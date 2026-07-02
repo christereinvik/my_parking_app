@@ -28,8 +28,9 @@ void main() async {
   );
 
   await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<DarwinFlutterLocalNotificationsPlugin>()
+      .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
       ?.requestPermissions(alert: true, badge: true, sound: true);
+
 
   runApp(const MyApp());
 }
