@@ -37,15 +37,15 @@ jobs:
         pod install
         cd ..
 
-    - name: Build Unsigned iOS App for Fysisk Enhet
+    - name: Build Unsigned iOS Simulator App
       run: |
-        flutter build ios --no-codesign --release --tree-shake-icons --dart-define=tint=arm64
+        flutter build ios --simulator --no-codesign
 
-    # Pakk den ekte enhets-builden inn i Payload-mappen for Sideloadly
+    # Pakk om til Payload med riktig struktur for Sideloadly
     - name: Prepare App for Sideloading
       run: |
         mkdir -p build/ios/iphoneos/Payload
-        cp -r build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/
+        cp -r build/ios/iphonesimulator/Runner.app build/ios/iphoneos/Payload/
         cd build/ios/iphoneos
         zip -r Runner.ipa Payload
 
@@ -55,6 +55,7 @@ jobs:
         name: Runner-IPA
         path: build/ios/iphoneos/Runner.ipa
         retention-days: 5
+
 
 
 
