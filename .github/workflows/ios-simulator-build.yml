@@ -37,9 +37,9 @@ jobs:
         pod install
         cd ..
 
-    - name: Build Unsigned iOS App for ARM64 Device
+    - name: Build Unsigned iOS Simulator App
       run: |
-        flutter build ios --simulator --no-codesign --pub-bindings --dart-define=flavors=prod
+        flutter build ios --simulator --no-codesign
 
     # Pakk om til Payload med riktig struktur for Sideloadly
     - name: Prepare App for Sideloading
@@ -55,5 +55,6 @@ jobs:
         name: Runner-IPA
         path: build/ios/iphoneos/Runner.ipa
         retention-days: 5
+
 
 
