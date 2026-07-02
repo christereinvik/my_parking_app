@@ -95,7 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        AudioPlayer().play(UrlSource('http://google.com'));
+        AudioPlayer().play(AssetSource('alarm.mp3'));
         
         return AlertDialog(
           title: Row(
