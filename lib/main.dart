@@ -64,61 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-    Future<void> _sendLocalNotification(String title, String body) async {
-    const androidDetails = AndroidNotificationDetails(
-      'parkering_channel',
-      'Parkering-varsler',
-      importance: Importance.max,
-      priority: Priority.high,
-      playSound: true,
-    );
-
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-      sound: 'default',
-    );
-
-    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
-
-    await flutterLocalNotificationsPlugin.show(
-      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-      title: title,
-      body: body,
-      notificationDetails: details,
-    );
-
-    // 🔥 Denne dialogboksen tvinger frem det visuelle og overstyrer iOS-sperren i forgrunnen
-    if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        AudioPlayer().play(AssetSource('alarm.mp3'));
-        
-        return AlertDialog(
-          title: Row(
-            children: [
-              const Icon(Icons.notifications_active, color: Colors.red),
-              const SizedBox(width: 10),
-              Text(title),
-            ],
-          ),
-          content: Text(body),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('OK, forstått'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-
-  Future<void> _startMonitoring() async {
+    Future<void> _startMonitoring() async {
     var perm = await geo.Geolocator.checkPermission();
     if (perm == geo.LocationPermission.denied) {
       perm = await geo.Geolocator.requestPermission();
@@ -134,14 +80,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() => monitoring = true);
 
+    // Starter live-mottaket av GPS-koordinater på din iPhone 13
     geo.Geolocator.getPositionStream(
       locationSettings: const geo.LocationSettings(
         accuracy: geo.LocationAccuracy.high,
-        distanceFilter: 10,
+        distanceFilter: 10, // Sjekker kun hvis du flytter deg 10 meter
       ),
     ).listen((geo.Position position) async {
       if (!monitoring) return;
       
+      // Regner ut nøyaktig avstand i meter til jobb-koordinatene i Tromsø
       double distanceInMeters = geo.Geolocator.distanceBetween(
         position.latitude,
         position.longitude,
@@ -149,9 +97,14 @@ class _HomeScreenState extends State<HomeScreen> {
         jobbLongitude,
       );
 
+      // 🔥 KUN SPILL ALARM HVIS DU FAKTISK ER INNENFOR 300 METER FRA JOBB!
       if (distanceInMeters <= jobbRadiusMeters) {
-        await _sendLocalNotification('Du er ved jobb', 'Husk å starte parkering og betaling');
-        _stopMonitoring();
+        _stopMonitoring(); // Slår av overvåkningen med en gang så den ikke looper uavbrutt
+        
+        await _sendLocalNotification(
+          'Du er ved jobb', 
+          'Avstand: ${distanceInMeters.toStringAsFixed(0)}m. Husk å starte parkering og betaling!'
+        );
       }
     });
   }
